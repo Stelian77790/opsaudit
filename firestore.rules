@@ -1,0 +1,157 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── HELPERS ───
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function getCompanyId() {
+      return request.auth.token.companyId;
+    }
+    function getRole() {
+      return request.auth.token.role;
+    }
+    function isAdmin() {
+      return getRole() == 'admin';
+    }
+    function isSuperAdmin() {
+      return request.auth.token.platformRole == 'superadmin';
+    }
+    function isInCompany(companyId) {
+      return isSignedIn() && getCompanyId() == companyId;
+    }
+    function canAudit() {
+      return getRole() == 'admin' || getRole() == 'auditor';
+    }
+
+    // ─── USERS ───
+    match /users/{userId} {
+      allow read: if isSignedIn() && (
+        request.auth.uid == userId || isSuperAdmin()
+      );
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isSignedIn() && request.auth.uid == userId;
+      allow delete: if false;
+    }
+
+    // ─── COMPANIES ───
+    match /companies/{companyId} {
+      allow read: if isInCompany(companyId) || isSuperAdmin();
+      allow create: if isSignedIn();
+      allow update: if isInCompany(companyId) && isAdmin();
+      allow delete: if isSuperAdmin();
+
+      // Members subcollection
+      match /members/{memberId} {
+        allow read: if isInCompany(companyId);
+        allow write: if isInCompany(companyId) && isAdmin();
+      }
+
+      // Locations subcollection
+      match /locations/{locationId} {
+        allow read: if isInCompany(companyId);
+        allow write: if isInCompany(companyId) && isAdmin();
+      }
+
+      // Activity Log - create only, never update/delete
+      match /activityLog/{logId} {
+        allow read: if isInCompany(companyId) && (isAdmin() || request.auth.uid == resource.data.actor.userId);
+        allow create: if isInCompany(companyId);
+        allow update: if false;
+        allow delete: if false;
+      }
+    }
+
+    // ─── TEMPLATES ───
+    match /templates/{templateId} {
+      allow read: if isSignedIn() && (
+        resource.data.isPublic == true ||
+        isInCompany(resource.data.companyId)
+      );
+      allow create: if isSignedIn() && isInCompany(request.resource.data.companyId) && canAudit();
+      allow update: if isSignedIn() && isInCompany(resource.data.companyId) && (isAdmin() || canAudit());
+      allow delete: if isSignedIn() && isInCompany(resource.data.companyId) && isAdmin();
+    }
+
+    // ─── AUDITS ───
+    match /audits/{auditId} {
+      allow read: if isSignedIn() && isInCompany(resource.data.companyId);
+      allow create: if isSignedIn() && isInCompany(request.resource.data.companyId) && canAudit();
+      allow update: if isSignedIn() && isInCompany(resource.data.companyId) && (
+        canAudit() || isAdmin()
+      );
+      allow delete: if isSignedIn() && isInCompany(resource.data.companyId) && isAdmin();
+
+      // Findings - immutable once created
+      match /findings/{findingId} {
+        allow read: if isSignedIn() && isInCompany(get(/databases/$(database)/documents/audits/$(auditId)).data.companyId);
+        allow create: if isSignedIn() && canAudit();
+        allow update: if isSignedIn() && isAdmin();
+        allow delete: if false;
+      }
+
+      // Actions
+      match /actions/{actionId} {
+        allow read: if isSignedIn() && isInCompany(get(/databases/$(database)/documents/audits/$(auditId)).data.companyId);
+        allow create: if isSignedIn() && canAudit();
+        allow update: if isSignedIn() && (
+          isAdmin() ||
+          request.auth.uid == resource.data.assigneeId
+        );
+        allow delete: if false;
+      }
+
+      // Activity - create only
+      match /activity/{logId} {
+        allow read: if isSignedIn() && isInCompany(get(/databases/$(database)/documents/audits/$(auditId)).data.companyId);
+        allow create: if isSignedIn();
+        allow update: if false;
+        allow delete: if false;
+      }
+    }
+
+    // ─── INVITATIONS ───
+    match /invitations/{inviteId} {
+      allow read: if isSignedIn() && (
+        isInCompany(resource.data.companyId) ||
+        resource.data.email == request.auth.token.email
+      );
+      allow create: if isSignedIn() && isAdmin();
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        resource.data.email == request.auth.token.email
+      );
+      allow delete: if false;
+    }
+
+    // ─── USAGE ───
+    match /usage/{companyId} {
+      allow read: if isInCompany(companyId);
+      allow write: if isInCompany(companyId) && isAdmin();
+    }
+
+    // ─── AUDIT TRAIL - TRULY IMMUTABLE ───
+    match /auditTrail/{logId} {
+      allow read: if isSignedIn() && (
+        isSuperAdmin() ||
+        isInCompany(resource.data.companyId) && isAdmin()
+      );
+      allow create: if isSignedIn();
+      allow update: if false; // NOBODY can ever update
+      allow delete: if false; // NOBODY can ever delete
+    }
+
+    // ─── PUBLIC TEMPLATES ───
+    match /publicTemplates/{templateId} {
+      allow read: if isSignedIn();
+      allow write: if isSuperAdmin();
+    }
+
+    // ─── BENCHMARKS ───
+    match /benchmarks/{docId} {
+      allow read: if isSignedIn();
+      allow write: if false; // Only via Admin SDK
+    }
+  }
+}

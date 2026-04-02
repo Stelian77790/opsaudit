@@ -1,0 +1,33 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Photos - only authenticated users from the same company
+    match /photos/{companyId}/{auditId}/{findingId}/{filename} {
+      allow read: if request.auth != null &&
+        request.auth.token.companyId == companyId;
+      allow write: if request.auth != null &&
+        request.auth.token.companyId == companyId &&
+        request.resource.size < 10 * 1024 * 1024 && // 10MB max
+        request.resource.contentType.matches('image/.*');
+    }
+
+    // Company logos
+    match /logos/{companyId}/{filename} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null &&
+        request.auth.token.companyId == companyId &&
+        request.auth.token.role == 'admin' &&
+        request.resource.size < 2 * 1024 * 1024;
+    }
+
+    // SOP documents
+    match /documents/{companyId}/{filename} {
+      allow read: if request.auth != null &&
+        request.auth.token.companyId == companyId;
+      allow write: if request.auth != null &&
+        request.auth.token.companyId == companyId &&
+        request.resource.size < 20 * 1024 * 1024; // 20MB max
+    }
+  }
+}
