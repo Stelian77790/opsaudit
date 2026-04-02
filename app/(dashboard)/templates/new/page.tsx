@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { db } from '@/lib/firebase'
@@ -33,7 +33,7 @@ function emptyQuestion(): Question {
   return { id: generateId(), text: '', type: 'pass_fail', required: true, weight: 3 }
 }
 
-export default function TemplateEditorPage({ params }: { params: { id?: string } }) {
+function TemplateEditor({ params }: { params: { id?: string } }) {
   const { user } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -423,5 +423,13 @@ export default function TemplateEditorPage({ params }: { params: { id?: string }
         </button>
       </div>
     </div>
+  )
+}
+
+export default function TemplateEditorPage({ params }: { params: { id?: string } }) {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-64"><Loader2 className="w-6 h-6 text-orange-400 animate-spin" /></div>}>
+      <TemplateEditor params={params} />
+    </Suspense>
   )
 }
