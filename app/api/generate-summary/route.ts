@@ -1,9 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest, NextResponse } from 'next/server'
 
-const client = new Anthropic()
+export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
+  const client = new Anthropic()
   try {
     const { audit, findings, companyName } = await req.json()
 

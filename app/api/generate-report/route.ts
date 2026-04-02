@@ -3,9 +3,10 @@ import { db } from '@/lib/firebase'
 import { doc, getDoc, collection, getDocs, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import Anthropic from '@anthropic-ai/sdk'
 
-const client = new Anthropic()
+export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
+  const client = new Anthropic()
   try {
     const { auditId, companyId, userId } = await req.json()
 

@@ -1,9 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest, NextResponse } from 'next/server'
 
-const client = new Anthropic()
+export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
+  const client = new Anthropic()
   try {
     const { imageBase64, mediaType, context } = await req.json()
     if (!imageBase64) return NextResponse.json({ error: 'Image required' }, { status: 400 })
