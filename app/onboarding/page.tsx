@@ -40,11 +40,14 @@ export default function OnboardingPage() {
     if (!user) return
     setLoading(true)
     try {
+      const { writeBatch } = await import('firebase/firestore')
+      const batch = writeBatch(db)
+
       const companyId = collection(db, 'companies').id || `company_${Date.now()}`
       const companyRef = doc(collection(db, 'companies'))
       const finalCompanyId = companyRef.id
 
-      await setDoc(companyRef, {
+      batch.set(companyRef, {
         name: form.companyName,
         industry: form.industry,
         size: form.size,
@@ -57,7 +60,7 @@ export default function OnboardingPage() {
       })
 
       // Add default location
-      await setDoc(doc(collection(db, `companies/${finalCompanyId}/locations`)), {
+      batch.set(doc(collection(db, `companies/${finalCompanyId}/locations`)), {
         name: 'Main Site',
         address: '',
         city: form.city,
@@ -67,7 +70,7 @@ export default function OnboardingPage() {
       })
 
       // Add user as member
-      await setDoc(doc(db, `companies/${finalCompanyId}/members`, user.uid), {
+      batch.set(doc(db, `companies/${finalCompanyId}/members`, user.uid), {
         userId: user.uid,
         name: user.name,
         email: user.email,
@@ -77,22 +80,26 @@ export default function OnboardingPage() {
       })
 
       // Update user doc
-      await updateDoc(doc(db, 'users', user.uid), {
+      batch.update(doc(db, 'users', user.uid), {
         companyId: finalCompanyId,
         role: 'admin',
       })
 
       // Initialise usage
-      await setDoc(doc(db, 'usage', finalCompanyId), {
+      batch.set(doc(db, 'usage', finalCompanyId), {
         auditsThisMonth: 0,
         locationsCount: 1,
         membersCount: 1,
         resetDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1),
       })
 
+      // Commit the batch
+      await batch.commit()
+
+      // Log out of the batch
       await logCritical(finalCompanyId, {
         userId: user.uid,
-        name: user.name,
+        name: user.name || 'User',
         role: 'admin',
         email: user.email,
       }, {

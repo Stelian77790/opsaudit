@@ -19,7 +19,13 @@ service cloud.firestore {
       return request.auth.token.platformRole == 'superadmin';
     }
     function isCompanyCreator(companyId) {
-      return isSignedIn() && get(/databases/$(database)/documents/companies/$(companyId)).data.createdBy == request.auth.uid;
+      // For sequential updates check get(), for batches check getAfter()
+      return isSignedIn() && (
+        (exists(/databases/$(database)/documents/companies/$(companyId)) && 
+         get(/databases/$(database)/documents/companies/$(companyId)).data.createdBy == request.auth.uid) ||
+        (existsAfter(/databases/$(database)/documents/companies/$(companyId)) && 
+         getAfter(/databases/$(database)/documents/companies/$(companyId)).data.createdBy == request.auth.uid)
+      );
     }
     function isInCompany(companyId) {
       return isSignedIn() && (
