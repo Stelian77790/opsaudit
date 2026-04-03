@@ -18,8 +18,15 @@ service cloud.firestore {
     function isSuperAdmin() {
       return request.auth.token.platformRole == 'superadmin';
     }
+    function isCompanyCreator(companyId) {
+      return isSignedIn() && get(/databases/$(database)/documents/companies/$(companyId)).data.createdBy == request.auth.uid;
+    }
     function isInCompany(companyId) {
-      return isSignedIn() && getCompanyId() == companyId;
+      return isSignedIn() && (
+        getCompanyId() == companyId ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId ||
+        isCompanyCreator(companyId)
+      );
     }
     function canAudit() {
       return getRole() == 'admin' || getRole() == 'auditor';
@@ -39,19 +46,19 @@ service cloud.firestore {
     match /companies/{companyId} {
       allow read: if isInCompany(companyId) || isSuperAdmin();
       allow create: if isSignedIn();
-      allow update: if isInCompany(companyId) && isAdmin();
+      allow update: if (isInCompany(companyId) && isAdmin()) || isCompanyCreator(companyId);
       allow delete: if isSuperAdmin();
 
       // Members subcollection
       match /members/{memberId} {
         allow read: if isInCompany(companyId);
-        allow write: if isInCompany(companyId) && isAdmin();
+        allow write: if (isInCompany(companyId) && isAdmin()) || isCompanyCreator(companyId);
       }
 
       // Locations subcollection
       match /locations/{locationId} {
         allow read: if isInCompany(companyId);
-        allow write: if isInCompany(companyId) && isAdmin();
+        allow write: if (isInCompany(companyId) && isAdmin()) || isCompanyCreator(companyId);
       }
 
       // Activity Log - create only, never update/delete
@@ -128,7 +135,7 @@ service cloud.firestore {
     // ─── USAGE ───
     match /usage/{companyId} {
       allow read: if isInCompany(companyId);
-      allow write: if isInCompany(companyId) && isAdmin();
+      allow write: if (isInCompany(companyId) && isAdmin()) || isCompanyCreator(companyId);
     }
 
     // ─── AUDIT TRAIL - TRULY IMMUTABLE ───
