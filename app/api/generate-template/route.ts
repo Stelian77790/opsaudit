@@ -44,7 +44,7 @@ Generate 4-6 sections with 5-8 questions each. Make questions specific, practica
     const cleaned = text.replace(/```json\n?|\n?```/g, '').trim()
     const template = JSON.parse(cleaned)
 
-    return NextResponse.json({ template, usage: response.usage })
+    return NextResponse.json({ template })
   } catch (err) {
     console.error('Template generation error:', err)
     return NextResponse.json({ error: 'Failed to generate template' }, { status: 500 })
