@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/firebase'
 import { doc, getDoc, collection, getDocs, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
-import Anthropic from '@anthropic-ai/sdk'
+import { GoogleGenAI } from '@google/genai'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
-  const client = new Anthropic()
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
   try {
     const { auditId, companyId, userId } = await req.json()
 
@@ -27,16 +27,15 @@ export async function POST(req: NextRequest) {
     const failCount = findings.filter(f => f.answer === 'fail' || f.answer === 'no').length
     const criticalCount = findings.filter(f => f.severity === 'critical').length
 
-    const summaryRes = await client.messages.create({
-      model: 'claude-opus-4-6',
-      max_tokens: 600,
-      system: 'You are a professional H&S consultant. Write concise executive summaries. Plain text only, no markdown, 3 paragraphs ~150 words total.',
-      messages: [{
-        role: 'user',
-        content: `Write executive summary: Company: ${company.name}, Audit: ${audit.templateTitle}, Score: ${audit.score}%, Location: ${audit.locationName}, Total findings: ${findings.length}, Failed: ${failCount}, Critical: ${criticalCount}`
-      }]
+    const summaryRes = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      config: {
+        maxOutputTokens: 600,
+        systemInstruction: 'You are a professional H&S consultant. Write concise executive summaries. Plain text only, no markdown, 3 paragraphs ~150 words total.'
+      },
+      contents: `Write executive summary: Company: ${company.name}, Audit: ${audit.templateTitle}, Score: ${audit.score}%, Location: ${audit.locationName}, Total findings: ${findings.length}, Failed: ${failCount}, Critical: ${criticalCount}`
     })
-    const summary = summaryRes.content[0].type === 'text' ? summaryRes.content[0].text : ''
+    const summary = (summaryRes.text || '')
 
     const reportRef = await addDoc(collection(db, `audits/${auditId}/reports`), {
       auditId, companyId, summary, generatedBy: userId,

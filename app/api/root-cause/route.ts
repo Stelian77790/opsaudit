@@ -1,17 +1,18 @@
-import Anthropic from '@anthropic-ai/sdk'
+import { GoogleGenAI } from '@google/genai'
 import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
-  const client = new Anthropic()
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
   try {
     const { recurringFindings, companyName, industry } = await req.json()
 
-    const response = await client.messages.create({
-      model: 'claude-opus-4-6',
-      max_tokens: 800,
-      system: `You are a root cause analysis expert for workplace safety.
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      config: {
+        maxOutputTokens: 800,
+        systemInstruction: `You are a root cause analysis expert for workplace safety.
 Analyse recurring findings and identify systemic root causes.
 Return ONLY valid JSON:
 {
@@ -28,19 +29,17 @@ Return ONLY valid JSON:
   ],
   "overallTheme": "string - the common thread across all findings",
   "priorityAction": "string - the single most important action to take"
-}`,
-      messages: [{
-        role: 'user',
-        content: `Perform root cause analysis for ${companyName} (${industry || 'General'}):
+}`
+      },
+      contents: `Perform root cause analysis for ${companyName} (${industry || 'General'}):
 Recurring findings in last 90 days:
 ${recurringFindings.map((f: { text: string; count: number; locations: string[]; categories: string[] }) =>
   `- "${f.text}" occurred ${f.count} times at: ${f.locations.join(', ')} (categories: ${f.categories.join(', ')})`
 ).join('\n')}
 Return ONLY the JSON.`
-      }]
     })
 
-    const text = response.content[0].type === 'text' ? response.content[0].text : ''
+    const text = (response.text || '')
     const cleaned = text.replace(/```json\n?|\n?```/g, '').trim()
     const analysis = JSON.parse(cleaned)
     return NextResponse.json({ analysis })

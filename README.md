@@ -1,6 +1,6 @@
 # OpsAudit AI — MVP v2
 
-AI-powered operational audit platform. Next.js 14 + Firebase + Anthropic Claude.
+AI-powered operational audit platform. Next.js 14 + Firebase + Google Gemini.
 
 ## What's Built
 
@@ -35,7 +35,7 @@ AI-powered operational audit platform. Next.js 14 + Firebase + Anthropic Claude.
 ## Stack
 - **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS
 - **Auth & DB**: Firebase (Auth, Firestore, Storage)
-- **AI**: Anthropic Claude API (claude-opus-4-6)
+- **AI**: Google Gemini API
 - **Charts**: Recharts
 - **PDF**: @react-pdf/renderer
 - **Animations**: Framer Motion
@@ -48,7 +48,7 @@ AI-powered operational audit platform. Next.js 14 + Firebase + Anthropic Claude.
 npm install
 cp .env.local.example .env.local
 
-# 2. Fill in .env.local with Firebase + Anthropic keys
+# 2. Fill in .env.local with Firebase + Gemini keys
 
 # 3. Run
 npm run dev
@@ -117,18 +117,18 @@ opsaudit/
 │   │   ├── team/             ← Members + invitations
 │   │   └── settings/         ← Company + locations
 │   ├── api/
-│   │   ├── generate-template/   ← Claude: AI template from description
-│   │   ├── analyse-sop/         ← Claude: SOP document → checklist
-│   │   ├── analyse-photo/       ← Claude Vision: hazard detection
-│   │   ├── score-risk/          ← Claude: likelihood × impact scoring
-│   │   ├── score-quality/       ← Claude: audit quality assessment
-│   │   ├── audit-copilot/       ← Claude: in-audit chat assistant
-│   │   ├── generate-report/     ← Claude: executive summary + report
-│   │   ├── generate-summary/    ← Claude: standalone summary
-│   │   ├── analytics-query/     ← Claude: natural language analytics
-│   │   ├── predict-risk/        ← Claude: forward risk prediction
-│   │   ├── root-cause/          ← Claude: systemic root cause analysis
-│   │   └── verify-resolution/   ← Claude: before/after verification
+│   │   ├── generate-template/   ← Gemini: AI template from description
+│   │   ├── analyse-sop/         ← Gemini: SOP document → checklist
+│   │   ├── analyse-photo/       ← Gemini: hazard detection
+│   │   ├── score-risk/          ← Gemini: likelihood × impact scoring
+│   │   ├── score-quality/       ← Gemini: audit quality assessment
+│   │   ├── audit-copilot/       ← Gemini: in-audit chat assistant
+│   │   ├── generate-report/     ← Gemini: executive summary + report
+│   │   ├── generate-summary/    ← Gemini: standalone summary
+│   │   ├── analytics-query/     ← Gemini: natural language analytics
+│   │   ├── predict-risk/        ← Gemini: forward risk prediction
+│   │   ├── root-cause/          ← Gemini: systemic root cause analysis
+│   │   └── verify-resolution/   ← Gemini: before/after verification
 │   ├── auth/                    ← Login, signup, forgot password
 │   ├── invite/                  ← Token-based invite acceptance
 │   └── onboarding/              ← Company setup wizard
@@ -159,7 +159,7 @@ NEXT_PUBLIC_FIREBASE_PROJECT_ID=
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
 NEXT_PUBLIC_FIREBASE_APP_ID=
-ANTHROPIC_API_KEY=sk-ant-...
+GEMINI_API_KEY=your-api-key-here
 NEXT_PUBLIC_APP_URL=https://your-domain.com
 ADMIN_SECRET=your-random-secret-for-superadmin-endpoint
 ```

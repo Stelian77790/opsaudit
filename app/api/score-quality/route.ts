@@ -1,10 +1,10 @@
-import Anthropic from '@anthropic-ai/sdk'
+import { GoogleGenAI } from '@google/genai'
 import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
-  const client = new Anthropic()
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
   try {
     const { audit, findings, answers } = await req.json()
 
@@ -26,10 +26,11 @@ export async function POST(req: NextRequest) {
       ? Math.floor((new Date(audit.submittedAt).getTime() - new Date(audit.startedAt).getTime()) / (1000 * 60))
       : null
 
-    const response = await client.messages.create({
-      model: 'claude-opus-4-6',
-      max_tokens: 300,
-      system: `You are a quality assessor for health and safety audits.
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      config: {
+        maxOutputTokens: 300,
+        systemInstruction: `You are a quality assessor for health and safety audits.
 Score the audit quality 1-10 and provide specific feedback.
 Return ONLY valid JSON:
 {
@@ -38,10 +39,9 @@ Return ONLY valid JSON:
   "feedback": ["string", "string"],
   "strengths": ["string"],
   "improvements": ["string - specific actionable improvement"]
-}`,
-      messages: [{
-        role: 'user',
-        content: `Score this audit quality:
+}`
+      },
+      contents: `Score this audit quality:
 Audit: ${audit.templateTitle}
 Completion: ${answeredCount}/${totalQuestions} questions answered
 Duration: ${durationMinutes ? durationMinutes + ' minutes' : 'unknown'}
@@ -52,10 +52,9 @@ Photos taken total: ${photosAdded}
 Score achieved: ${audit.score}%
 
 Return ONLY the JSON.`
-      }]
     })
 
-    const text = response.content[0].type === 'text' ? response.content[0].text : ''
+    const text = (response.text || '')
     const cleaned = text.replace(/```json\n?|\n?```/g, '').trim()
     const quality = JSON.parse(cleaned)
 

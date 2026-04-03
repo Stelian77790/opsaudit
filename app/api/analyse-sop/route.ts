@@ -1,10 +1,10 @@
-import Anthropic from '@anthropic-ai/sdk'
+import { GoogleGenAI } from '@google/genai'
 import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
-  const client = new Anthropic()
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
   try {
     const formData = await req.formData()
     const file = formData.get('file') as File
@@ -17,18 +17,15 @@ export async function POST(req: NextRequest) {
     const base64 = Buffer.from(arrayBuffer).toString('base64')
     const mediaType = file.type as 'application/pdf' | 'text/plain'
 
-    let documentContent: Anthropic.MessageParam['content']
+    let documentContent: any[]
 
     if (file.type === 'application/pdf') {
       documentContent = [{
-        type: 'document',
-        source: {
-          type: 'base64',
-          media_type: 'application/pdf',
+        inlineData: {
+          mimeType: 'application/pdf',
           data: base64,
         },
       }, {
-        type: 'text',
         text: `Analyse this SOP/Work Instruction document and generate a compliance audit checklist.
 Each question must verify adherence to a specific procedure in the document.
 Include the source section reference in the hint field.
@@ -60,7 +57,6 @@ Generate 4-8 sections covering all major procedures. Make questions specific and
       // Plain text fallback
       const textContent = Buffer.from(arrayBuffer).toString('utf-8')
       documentContent = [{
-        type: 'text',
         text: `Analyse this SOP document and generate a compliance audit checklist:
 
 ${textContent}
@@ -76,14 +72,16 @@ Return ONLY valid JSON with this schema:
       }]
     }
 
-    const response = await client.messages.create({
-      model: 'claude-opus-4-6',
-      max_tokens: 3000,
-      system: 'You are an expert H&S auditor. Generate precise compliance checklists from SOPs. Return ONLY valid JSON, no markdown, no preamble.',
-      messages: [{ role: 'user', content: documentContent }]
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      config: {
+        maxOutputTokens: 3000,
+        systemInstruction: 'You are an expert H&S auditor. Generate precise compliance checklists from SOPs. Return ONLY valid JSON, no markdown, no preamble.',
+      },
+      contents: [{ role: 'user', parts: documentContent }]
     })
 
-    const text = response.content[0].type === 'text' ? response.content[0].text : ''
+    const text = (response.text || '')
     const cleaned = text.replace(/```json\n?|\n?```/g, '').trim()
     const template = JSON.parse(cleaned)
 

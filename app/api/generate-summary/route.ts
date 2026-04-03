@@ -1,10 +1,10 @@
-import Anthropic from '@anthropic-ai/sdk'
+import { GoogleGenAI } from '@google/genai'
 import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
-  const client = new Anthropic()
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
   try {
     const { audit, findings, companyName } = await req.json()
 
@@ -16,19 +16,19 @@ export async function POST(req: NextRequest) {
       f.severity === 'critical'
     ).length
 
-    const response = await client.messages.create({
-      model: 'claude-opus-4-6',
-      max_tokens: 600,
-      system: `You are a professional health and safety consultant writing executive summaries for audit reports.
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      config: {
+        maxOutputTokens: 600,
+        systemInstruction: `You are a professional health and safety consultant writing executive summaries for audit reports.
 Write in a professional, clear, and constructive tone. Be specific but concise.
 Write 3 short paragraphs totalling around 150 words.
 Do not use bullet points. Do not use markdown. Plain text only.
 First paragraph: Overall performance and score context.
 Second paragraph: Key issues found and their significance.
-Third paragraph: Priority recommendations and positive observations.`,
-      messages: [{
-        role: 'user',
-        content: `Write an executive summary for this audit:
+Third paragraph: Priority recommendations and positive observations.`
+      },
+      contents: `Write an executive summary for this audit:
 Company: ${companyName}
 Audit: ${audit.templateTitle}
 Location: ${audit.locationName}
@@ -46,10 +46,9 @@ Key findings: ${findings
     `- ${f.questionText} (${f.severity})${f.aiSuggestedAction ? ': ' + f.aiSuggestedAction : ''}`
   )
   .join('\n')}`
-      }]
     })
 
-    const summary = response.content[0].type === 'text' ? response.content[0].text : ''
+    const summary = (response.text || '')
     return NextResponse.json({ summary })
   } catch (err) {
     console.error('Summary generation error:', err)

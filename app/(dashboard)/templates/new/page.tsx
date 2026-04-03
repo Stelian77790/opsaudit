@@ -252,7 +252,7 @@ function TemplateEditor({ params }: { params: { id?: string } }) {
             <Upload className="w-4 h-4 text-blue-400" />
             <h3 className="text-sm font-semibold text-blue-400">SOP / Work Instruction Upload</h3>
           </div>
-          <p className="text-xs text-neutral-500">Upload a PDF or text SOP document. Claude will read every procedure and generate a compliance audit template with each question traceable to its source section.</p>
+          <p className="text-xs text-neutral-500">Upload a PDF or text SOP document. Gemini will read every procedure and generate a compliance audit template with each question traceable to its source section.</p>
           <input ref={sopFileRef} type="file" accept=".pdf,.txt" className="hidden" id="sop-upload"
             onChange={e => { const f = e.target.files?.[0]; if (f) handleSopUpload(f); e.target.value = '' }} />
           <label htmlFor="sop-upload"
@@ -260,7 +260,7 @@ function TemplateEditor({ params }: { params: { id?: string } }) {
               uploadingSop ? 'border-blue-500/40 bg-blue-500/10' : 'border-[#2A2A2A] hover:border-blue-500/30 hover:bg-blue-500/5'
             }`}>
             {uploadingSop ? (
-              <><Loader2 className="w-5 h-5 text-blue-400 animate-spin" /><span className="text-sm text-blue-400">Analysing document with Claude...</span></>
+              <><Loader2 className="w-5 h-5 text-blue-400 animate-spin" /><span className="text-sm text-blue-400">Analysing document with Gemini...</span></>
             ) : (
               <><Upload className="w-5 h-5 text-neutral-600" /><div><p className="text-sm text-neutral-400">Click to upload PDF or TXT</p><p className="text-xs text-neutral-600 mt-0.5">Max 20MB · SOP, WI, Risk Assessment, Method Statement</p></div></>
             )}
@@ -300,7 +300,7 @@ function TemplateEditor({ params }: { params: { id?: string } }) {
           {generating && (
             <div className="flex items-center gap-2 text-xs text-neutral-500">
               <div className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-pulse" />
-              Claude is building your template...
+              Gemini is building your template...
             </div>
           )}
         </div>
