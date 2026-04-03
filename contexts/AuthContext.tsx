@@ -49,8 +49,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       setFirebaseUser(fbUser)
       if (fbUser) {
-        const userData = await loadUserData(fbUser)
-        setUser(userData)
+        try {
+          const userData = await loadUserData(fbUser)
+          setUser(userData)
+        } catch (error) {
+          console.error("Error loading user data:", error)
+          setUser(null)
+        }
       } else {
         setUser(null)
       }
@@ -73,6 +78,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       createdAt: serverTimestamp(),
       lastLoginAt: serverTimestamp(),
     })
+    
+    // Explicitly update user state so we don't fall into a race condition
+    // where onAuthStateChanged fires before this setDoc finishes.
+    const userData = await loadUserData(fbUser)
+    setUser(userData)
   }
 
   async function signInWithGoogle() {
