@@ -1,5 +1,7 @@
-@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   --background: #0A0A0A;
@@ -25,9 +27,8 @@ body {
 ::selection { background: rgba(249,115,22,0.3); color: white; }
 
 @layer components {
-  @reference "tailwindcss";
   .card { @apply bg-[#111111] border border-[#1F1F1F] rounded-xl; }
-  .card-hover { @apply bg-[#111111] border border-[#1F1F1F] rounded-xl transition-all duration-200 hover:border-orange-500/30 hover:shadow-[0_0_20px_rgba(249,115,22,0.1)]; }
+  .card-hover { @apply card transition-all duration-200 hover:border-orange-500/30 hover:shadow-[0_0_20px_rgba(249,115,22,0.1)]; }
   .btn-primary { @apply bg-orange-500 hover:bg-orange-600 text-white font-medium px-4 py-2 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed; }
   .btn-secondary { @apply bg-[#1F1F1F] hover:bg-[#2A2A2A] text-white font-medium px-4 py-2 rounded-lg border border-[#2A2A2A] transition-all duration-200; }
   .btn-ghost { @apply hover:bg-[#1F1F1F] text-neutral-400 hover:text-white font-medium px-4 py-2 rounded-lg transition-all duration-200; }
@@ -35,5 +36,5 @@ body {
   .label { @apply text-sm font-medium text-neutral-400 block mb-1.5; }
   .badge { @apply inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border; }
   .sidebar-item { @apply flex items-center gap-3 px-3 py-2 rounded-lg text-neutral-400 hover:text-white hover:bg-[#1A1A1A] transition-all duration-200 text-sm cursor-pointer; }
-  .sidebar-item-active { @apply flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm cursor-pointer text-orange-400 bg-orange-500/10 border border-orange-500/20; }
+  .sidebar-item-active { @apply sidebar-item text-orange-400 bg-orange-500/10 border border-orange-500/20; }
 }

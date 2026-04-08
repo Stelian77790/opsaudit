@@ -10,7 +10,10 @@ import {
 import { Company, Location } from '@/types'
 import { logActivity } from '@/lib/auditLog'
 import toast from 'react-hot-toast'
-import { Building2, MapPin, Plus, Save, Loader2, X } from 'lucide-react'
+import { Building2, MapPin, Plus, Save, Loader2, X, CreditCard } from 'lucide-react'
+import dynamic from 'next/dynamic'
+
+const BillingPage = dynamic(() => import('@/components/BillingPage'), { ssr: false })
 
 export default function SettingsPage() {
   const { user } = useAuth()
@@ -83,6 +86,7 @@ export default function SettingsPage() {
       <div className="flex gap-1 border-b border-[#1F1F1F] pb-0">
         {[
           { id: 'company', label: 'Company', icon: Building2 },
+          { id: 'billing', label: 'Billing', icon: CreditCard },
           { id: 'locations', label: 'Locations', icon: MapPin },
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
@@ -196,6 +200,13 @@ export default function SettingsPage() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Billing Tab */}
+      {activeTab === 'billing' && (
+        <div className="animate-fade-in">
+          <BillingPage />
         </div>
       )}
     </div>

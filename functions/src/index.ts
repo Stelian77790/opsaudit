@@ -7,6 +7,31 @@ import { logger } from 'firebase-functions/v2'
 admin.initializeApp()
 const db = admin.firestore()
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://opsaudit-f825f.web.app'
+
+// Simple email helper using Resend directly from functions
+async function sendEmail(to: string, subject: string, html: string) {
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey || apiKey === 're_PLACEHOLDER') {
+    logger.info(`[EMAIL PLACEHOLDER] To: ${to} Subject: ${subject}`)
+    return
+  }
+  try {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: process.env.RESEND_FROM_EMAIL || 'noreply@opsaudit.ai',
+        to,
+        subject,
+        html,
+      }),
+    })
+  } catch (err) {
+    logger.error('Email send failed', err)
+  }
+}
+
 // ─────────────────────────────────────────────
 // 1. SET CUSTOM CLAIMS WHEN MEMBER JOINS COMPANY
 // ─────────────────────────────────────────────
@@ -71,11 +96,25 @@ export const escalateOverdueActions = onSchedule(
           const ref = actionDoc.ref
 
           if (daysOverdue >= 7 && action.status !== 'escalated') {
-            // Escalate
             await ref.update({
               status: 'escalated',
               escalatedAt: admin.firestore.FieldValue.serverTimestamp(),
             })
+
+            // Notify admins
+            const membersSnap = await db.collection(`companies/${action.companyId}/members`)
+              .where('role', '==', 'admin').get()
+
+            for (const adminDoc of membersSnap.docs) {
+              const adminData = adminDoc.data()
+              if (adminData.email) {
+                await sendEmail(
+                  adminData.email,
+                  `⚠ Escalated: ${action.title} is ${daysOverdue} days overdue`,
+                  `<p>Action <strong>${action.title}</strong> assigned to ${action.assigneeName || 'unassigned'} is ${daysOverdue} days overdue and has been escalated.</p><a href="${APP_URL}/actions">View Actions</a>`
+                )
+              }
+            }
 
             // Log escalation
             await db.collection(`companies/${action.companyId}/activityLog`).add({

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { db } from '@/lib/firebase'
 import {
@@ -13,7 +13,7 @@ import toast from 'react-hot-toast'
 import { Zap, CheckCircle, XCircle, Loader2, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 
-function InviteForm() {
+export default function InvitePage() {
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
   const router = useRouter()
@@ -154,13 +154,5 @@ function InviteForm() {
         </div>
       </div>
     </div>
-  )
-}
-
-export default function InvitePage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center"><Loader2 className="w-6 h-6 text-orange-400 animate-spin" /></div>}>
-      <InviteForm />
-    </Suspense>
   )
 }

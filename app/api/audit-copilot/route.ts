@@ -1,10 +1,9 @@
-import { GoogleGenAI } from '@google/genai'
+import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest, NextResponse } from 'next/server'
 
-export const dynamic = 'force-dynamic'
+const client = new Anthropic()
 
 export async function POST(req: NextRequest) {
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
   try {
     const { question, context, history } = await req.json()
 
@@ -21,24 +20,22 @@ Reference relevant regulations when applicable (UK HSE, ISO 45001, etc.).
 If the question is about a physical hazard severity, always err on the side of caution.
 Plain text only — no markdown, no bullet points.`
 
-    const contents: any[] = [
+    const messages: Anthropic.MessageParam[] = [
       ...history.map((m: { role: string; content: string }) => ({
-        role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.content }],
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
       })),
-      { role: 'user', parts: [{ text: question }] },
+      { role: 'user', content: question },
     ]
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      config: {
-        maxOutputTokens: 300,
-        systemInstruction: systemPrompt,
-      },
-      contents,
+    const response = await client.messages.create({
+      model: 'claude-opus-4-6',
+      max_tokens: 300,
+      system: systemPrompt,
+      messages,
     })
 
-    const answer = (response.text || '')
+    const answer = response.content[0].type === 'text' ? response.content[0].text : ''
     return NextResponse.json({ answer })
   } catch (err) {
     console.error('Copilot error:', err)
