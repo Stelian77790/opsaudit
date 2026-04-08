@@ -6,34 +6,41 @@ runConfig:
 
 env:
   - variable: APP_CONFIG_STATUS
-    value: "WORKING_OPSAUDIT"
+    value: "WORKING_OPSAUDIT_V2"
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
     secret: NEXT_PUBLIC_FIREBASE_API_KEY
     availability:
+      - BUILD
       - RUNTIME
   - variable: NEXT_PUBLIC_FIREBASE_APP_ID
     secret: NEXT_PUBLIC_FIREBASE_APP_ID
     availability:
+      - BUILD
       - RUNTIME
   - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
     secret: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
     availability:
+      - BUILD
       - RUNTIME
   - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
     secret: NEXT_PUBLIC_FIREBASE_PROJECT_ID
     availability:
+      - BUILD
       - RUNTIME
   - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
     secret: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
     availability:
+      - BUILD
       - RUNTIME
   - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
     secret: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
     availability:
+      - BUILD
       - RUNTIME
   - variable: GOOGLE_API_KEY
     secret: GEMINI_API_KEY
     availability:
+      - BUILD
       - RUNTIME
 
 experimental:
