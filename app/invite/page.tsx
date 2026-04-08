@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { db } from '@/lib/firebase'
 import {
@@ -13,7 +13,7 @@ import toast from 'react-hot-toast'
 import { Zap, CheckCircle, XCircle, Loader2, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 
-export default function InvitePage() {
+function InviteContent() {
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
   const router = useRouter()
@@ -41,18 +41,15 @@ export default function InvitePage() {
     if (!invitation) return
     setAccepting(true)
     try {
-      // If not logged in, sign up first
       if (!user) {
         if (!form.name || !form.password) { toast.error('Fill in all fields'); setAccepting(false); return }
         await signUp(invitation.email, form.password, form.name)
       }
 
-      // Get the current user uid
       const uid = user?.uid || (await new Promise<string>(resolve => {
         const unsub = (window as Window & { firebase?: { auth: () => { onAuthStateChanged: (cb: (u: { uid: string } | null) => void) => () => void } } }).firebase?.auth().onAuthStateChanged((u) => { if (u) { unsub?.(); resolve(u.uid) } })
       }))
 
-      // Accept invite — update invitation, update user, add to members
       await Promise.all([
         updateDoc(doc(db, 'invitations', invitation.id), { status: 'accepted' }),
         setDoc(doc(db, 'users', uid), {
@@ -154,5 +151,17 @@ export default function InvitePage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function InvitePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
+        <Loader2 className="w-6 h-6 text-orange-400 animate-spin" />
+      </div>
+    }>
+      <InviteContent />
+    </Suspense>
   )
 }
