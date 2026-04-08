@@ -6,14 +6,20 @@ import { useAuth } from '@/contexts/AuthContext'
 import { db } from '@/lib/firebase'
 import { collection, getDocs, query, where, addDoc, serverTimestamp } from 'firebase/firestore'
 import { Template, Location, AppUser } from '@/types'
+import { useUsageLimits } from '@/hooks/useUsageLimits'
+import dynamic from 'next/dynamic'
+const UpgradeModal = dynamic(() => import('@/components/UpgradeModal'), { ssr: false })
 import { logActivity } from '@/lib/auditLog'
-import toast from 'react-hot-toast'
 import { ArrowLeft, ClipboardList, MapPin, User, Calendar, Play, Loader2 } from 'lucide-react'
 import Link from 'next/link'
+
+import toast from 'react-hot-toast'
 
 export default function NewAuditPage() {
   const { user } = useAuth()
   const router = useRouter()
+  const { canCreateAudit, usage, limits, isPro } = useUsageLimits()
+  const [showUpgrade, setShowUpgrade] = useState(false)
   const [templates, setTemplates] = useState<Template[]>([])
   const [locations, setLocations] = useState<Location[]>([])
   const [members, setMembers] = useState<AppUser[]>([])
@@ -43,6 +49,7 @@ export default function NewAuditPage() {
   }, [user?.companyId])
 
   async function handleStart() {
+    if (!canCreateAudit) { setShowUpgrade(true); return }
     if (!form.templateId || !form.locationId) { toast.error('Select a template and location'); return }
     if (!user?.companyId) return
     setSaving(true)
@@ -90,6 +97,13 @@ export default function NewAuditPage() {
 
   return (
     <div className="max-w-2xl space-y-6 animate-fade-in">
+      {showUpgrade && (
+        <UpgradeModal
+          reason={`You've used ${usage?.auditsThisMonth || 0}/${limits.auditsPerMonth} audits this month. Upgrade to run unlimited audits.`}
+          onClose={() => setShowUpgrade(false)}
+        />
+      )}
+
       <div className="flex items-center gap-3">
         <Link href="/audits" className="btn-ghost p-2">
           <ArrowLeft className="w-4 h-4" />

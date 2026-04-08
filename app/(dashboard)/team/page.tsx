@@ -70,6 +70,21 @@ export default function TeamPage() {
         createdAt: serverTimestamp(),
       })
 
+      // Send invite email
+      await fetch('/api/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'invite',
+          toEmail: inviteForm.email,
+          inviterName: user.name,
+          companyName: 'Your Company',
+          role: inviteForm.role,
+          token,
+          message: inviteForm.message,
+        }),
+      })
+
       await logCritical(user.companyId, {
         userId: user.uid, name: user.name, role: user.role || '', email: user.email
       }, {

@@ -6,7 +6,8 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import {
   LayoutDashboard, ClipboardList, FileText,
-  Users, Settings, LogOut, Zap, ChevronDown, Plus, Brain
+  Users, Settings, LogOut, Zap, ChevronDown, Plus,
+  Brain, Shield, AlertOctagon
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -15,6 +16,8 @@ const navItems = [
   { href: '/audits', icon: ClipboardList, label: 'Audits' },
   { href: '/templates', icon: FileText, label: 'Templates' },
   { href: '/actions', icon: ClipboardList, label: 'Actions' },
+  { href: '/permits', icon: Shield, label: 'Permits' },
+  { href: '/incidents', icon: AlertOctagon, label: 'Incidents' },
   { href: '/intelligence', icon: Brain, label: 'Intelligence' },
   { href: '/team', icon: Users, label: 'Team' },
   { href: '/settings', icon: Settings, label: 'Settings' },

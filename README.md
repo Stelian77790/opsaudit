@@ -1,175 +1,172 @@
-# OpsAudit AI — MVP v2
+# OpsAudit AI — MVP v3
 
-AI-powered operational audit platform. Next.js 14 + Firebase + Google Gemini.
+AI-powered operational audit platform. Next.js 14 + Firebase + Anthropic Claude.
 
 ## What's Built
 
 ### Phase 1 — Foundation
 - Auth (email/password + Google SSO + forgot password)
-- Company workspace creation (3-step onboarding)
+- Company workspace onboarding (3-step wizard)
 - Multi-tenant Firestore with full security rules
-- Role-based access: Admin, Manager, Auditor, Assignee, Viewer
-- Invite system with token-based acceptance flow
+- Roles: Admin, Manager, Auditor, Assignee, Viewer
+- Token-based invite system with email notifications
 - Immutable audit trail on every action
 - Superadmin portal
 
-### Phase 2 — Intelligence
-- AI template generator (plain English → full checklist)
-- SOP/Work Instruction upload → AI generates compliance checklist
-- Audit execution flow (mobile-first, section by section)
-- Photo capture with real-time Claude Vision hazard analysis
+### Phase 2 — AI Intelligence
+- AI template generator (plain English → checklist)
+- SOP/Work Instruction PDF upload → AI compliance checklist
+- Mobile-first audit execution flow
+- Photo capture + real-time Claude Vision hazard detection
 - AI risk scoring per finding (likelihood × impact)
 - AI corrective action suggestions
-- AI Audit Copilot (floating chat during audits, voice-enabled)
+- AI Audit Copilot (floating voice-enabled chat during audits)
 - Audit quality scoring (post-submission)
 - Before/After photo verification for corrective actions
-- Auto-generated PDF audit reports with AI executive summary
-- Full analytics dashboard with recharts (score trend, severity donut, frequency chart)
+- Auto-generated PDF reports with AI executive summary
+- Full analytics dashboard (recharts: trend, donut, frequency)
 - Natural language analytics ("ask your data")
 - Predictive Risk Index per location
 - Root Cause Analysis engine
-- Corrective actions hub with detail panel and comments
+- Action detail panel with comments + AI verification
 - Intelligence page (predictions + RCA)
-- Cloud Functions: custom claims, escalation, health scores, benchmarking, anomaly detection
+- 6 Cloud Functions: custom claims, escalation, health scores, benchmarking, anomaly detection, superadmin
+
+### Phase 3 — Monetisation & Modules
+- Stripe subscription (checkout, webhooks, billing portal)
+- Freemium limits enforcement (audits/locations/members)
+- Upgrade modal on limit hit
+- Billing settings tab with plan comparison
+- Resend email system (invite, overdue, audit report, weekly digest, escalation, welcome)
+- Email placeholders — works without API key, logs to console
+- Permit to Work module (5 types, AI validation, active permit tracking)
+- Incident Management (5 types, AI root cause + regulatory notification, RIDDOR check)
+- Sidebar updated with all new pages
 
 ## Stack
-- **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS
+- **Frontend**: Next.js 14, TypeScript, Tailwind CSS
 - **Auth & DB**: Firebase (Auth, Firestore, Storage)
-- **AI**: Google Gemini API
+- **AI**: Anthropic Claude API (claude-opus-4-6)
+- **Payments**: Stripe
+- **Email**: Resend
 - **Charts**: Recharts
 - **PDF**: @react-pdf/renderer
-- **Animations**: Framer Motion
-- **Design**: Black & Orange dark premium (#0A0A0A / #F97316)
 
 ## Quick Start
 
 ```bash
-# 1. Install
 npm install
 cp .env.local.example .env.local
-
-# 2. Fill in .env.local with Firebase + Gemini keys
-
-# 3. Run
+# Fill in Firebase + Anthropic keys (Stripe + Resend optional for now)
 npm run dev
-```
-
-## Firebase Setup
-
-1. Create project at console.firebase.google.com
-2. Enable: Authentication (Email/Password + Google), Firestore, Storage
-3. Add web app → copy config to .env.local
-4. Deploy rules:
-```bash
-npm install -g firebase-tools
-firebase login
-firebase use --add   # select your project
-firebase deploy --only firestore:rules,firestore:indexes,storage
-```
-
-## Cloud Functions Setup
-
-```bash
-cd functions
-npm install
-npm run build
-cd ..
-firebase deploy --only functions
-```
-
-Functions deployed:
-- `onMemberWrite` — sets custom claims when member joins (critical for security rules)
-- `escalateOverdueActions` — daily 8am escalation check
-- `calculateHealthScores` — weekly composite score
-- `aggregateBenchmarks` — nightly anonymised industry benchmarks
-- `detectAuditAnomalies` — flags suspicious audit patterns
-- `setSuperAdmin` — HTTP endpoint to grant superadmin (protect with ADMIN_SECRET env var)
-
-## Set Yourself as Superadmin
-
-After deploying functions:
-```bash
-curl -X POST https://your-region-your-project.cloudfunctions.net/setSuperAdmin \
-  -H "Content-Type: application/json" \
-  -H "x-admin-secret: YOUR_ADMIN_SECRET" \
-  -d '{"uid": "your-firebase-uid"}'
-```
-
-## Deploy to Vercel (Recommended)
-
-```bash
-npm install -g vercel
-vercel
-# Add all .env.local values in Vercel dashboard
-```
-
-## Project Structure
-
-```
-opsaudit/
-├── app/
-│   ├── (dashboard)/
-│   │   ├── dashboard/        ← Analytics dashboard with charts
-│   │   ├── audits/           ← List, new, [id], [id]/conduct
-│   │   ├── templates/        ← Library, new (manual + AI + SOP upload)
-│   │   ├── actions/          ← Hub with detail panel + AI verification
-│   │   ├── intelligence/     ← Predictive risk + root cause analysis
-│   │   ├── team/             ← Members + invitations
-│   │   └── settings/         ← Company + locations
-│   ├── api/
-│   │   ├── generate-template/   ← Gemini: AI template from description
-│   │   ├── analyse-sop/         ← Gemini: SOP document → checklist
-│   │   ├── analyse-photo/       ← Gemini: hazard detection
-│   │   ├── score-risk/          ← Gemini: likelihood × impact scoring
-│   │   ├── score-quality/       ← Gemini: audit quality assessment
-│   │   ├── audit-copilot/       ← Gemini: in-audit chat assistant
-│   │   ├── generate-report/     ← Gemini: executive summary + report
-│   │   ├── generate-summary/    ← Gemini: standalone summary
-│   │   ├── analytics-query/     ← Gemini: natural language analytics
-│   │   ├── predict-risk/        ← Gemini: forward risk prediction
-│   │   ├── root-cause/          ← Gemini: systemic root cause analysis
-│   │   └── verify-resolution/   ← Gemini: before/after verification
-│   ├── auth/                    ← Login, signup, forgot password
-│   ├── invite/                  ← Token-based invite acceptance
-│   └── onboarding/              ← Company setup wizard
-├── components/
-│   ├── Sidebar.tsx
-│   ├── Charts.tsx               ← Recharts components
-│   ├── AuditCopilot.tsx         ← Floating AI chat during audits
-│   ├── AuditReport.tsx          ← React PDF report
-│   └── ActionDetailPanel.tsx    ← Slide-in action detail
-├── contexts/AuthContext.tsx
-├── lib/
-│   ├── firebase.ts
-│   ├── auditLog.ts
-│   └── utils.ts
-├── types/index.ts
-├── functions/src/index.ts       ← All Cloud Functions
-├── firestore.rules
-├── storage.rules
-└── firestore.indexes.json
 ```
 
 ## Environment Variables
 
 ```env
+# Required
 NEXT_PUBLIC_FIREBASE_API_KEY=
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
 NEXT_PUBLIC_FIREBASE_APP_ID=
-GEMINI_API_KEY=your-api-key-here
+ANTHROPIC_API_KEY=sk-ant-...
 NEXT_PUBLIC_APP_URL=https://your-domain.com
-ADMIN_SECRET=your-random-secret-for-superadmin-endpoint
+
+# Stripe (add when ready)
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_PRO_PRICE_ID=price_...
+STRIPE_ENTERPRISE_PRICE_ID=price_...
+
+# Resend (add when ready)
+RESEND_API_KEY=re_...
+RESEND_FROM_EMAIL=noreply@opsaudit.ai
+
+# Admin
+ADMIN_SECRET=your-random-secret
 ```
 
-## Phase 3 Roadmap (Next)
-- Permit to Work module
-- Incident Management
-- ESG/Environmental auditing module
-- REST API for enterprise
-- Stripe subscription integration
-- Email notification system (Firebase Extensions or Resend)
-- Offline mode with service worker
-- Mobile PWA manifest
+## Stripe Setup (when ready)
+
+1. Create products in Stripe dashboard:
+   - Professional: €149/month recurring
+   - Enterprise: €349/month recurring
+2. Copy the Price IDs into your env vars
+3. Set up webhook endpoint: `https://your-domain.com/api/stripe/webhook`
+   - Events to listen for: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`
+4. Copy webhook signing secret into `STRIPE_WEBHOOK_SECRET`
+
+## Resend Setup (when ready)
+
+1. Create account at resend.com
+2. Add and verify your sending domain
+3. Create an API key
+4. Add to `RESEND_API_KEY` and set `RESEND_FROM_EMAIL`
+
+## Deploy
+
+```bash
+# Deploy Firebase rules + indexes
+firebase deploy --only firestore:rules,firestore:indexes,storage
+
+# Deploy Cloud Functions
+cd functions && npm install && npm run build && cd ..
+firebase deploy --only functions
+
+# Full deploy (hosting + functions + rules)
+firebase deploy
+```
+
+## File Structure
+
+```
+opsaudit/
+├── app/
+│   ├── (dashboard)/
+│   │   ├── dashboard/          ← Analytics + AI query
+│   │   ├── audits/             ← List, new, conduct, detail
+│   │   ├── templates/          ← Library + manual/AI/SOP builder
+│   │   ├── actions/            ← Hub + detail panel + verification
+│   │   ├── permits/            ← Permit to Work + AI validation
+│   │   ├── incidents/          ← Incident reporting + AI analysis
+│   │   ├── intelligence/       ← Predictive risk + root cause
+│   │   ├── team/               ← Members + invites
+│   │   └── settings/           ← Company + locations + billing
+│   ├── api/
+│   │   ├── stripe/             ← checkout, webhook, portal
+│   │   ├── email/              ← unified email endpoint
+│   │   ├── generate-template/  ├── analyse-sop/
+│   │   ├── analyse-photo/      ├── score-risk/
+│   │   ├── score-quality/      ├── audit-copilot/
+│   │   ├── generate-report/    ├── analytics-query/
+│   │   ├── predict-risk/       ├── root-cause/
+│   │   ├── verify-resolution/  ├── check-permit/
+│   │   └── analyse-incident/
+│   ├── auth/                   ← login, signup, forgot-password
+│   ├── invite/                 ← token acceptance
+│   └── onboarding/             ← company setup wizard
+├── components/
+│   ├── Sidebar.tsx             ├── Charts.tsx
+│   ├── AuditCopilot.tsx        ├── AuditReport.tsx
+│   ├── ActionDetailPanel.tsx   ├── UpgradeModal.tsx
+│   └── BillingPage.tsx
+├── hooks/
+│   └── useUsageLimits.ts
+├── lib/
+│   ├── firebase.ts  ├── stripe.ts
+│   ├── email.ts     ├── auditLog.ts  ├── utils.ts
+├── functions/src/index.ts       ← Cloud Functions
+├── types/index.ts
+├── firestore.rules  ├── storage.rules  ├── firestore.indexes.json
+```
+
+## Phase 4 Roadmap
+- REST API for enterprise (GET /audits, GET /findings, webhooks)
+- ESG / Environmental audit module
+- Mobile PWA (offline service worker + manifest)
+- Advanced benchmarking dashboard
+- Contractor self-service portal
+- Slack / Teams notification integration

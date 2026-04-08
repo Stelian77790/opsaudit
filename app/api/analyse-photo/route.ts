@@ -1,19 +1,17 @@
-import { GoogleGenAI } from '@google/genai'
+import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest, NextResponse } from 'next/server'
 
-export const dynamic = 'force-dynamic'
+const client = new Anthropic()
 
 export async function POST(req: NextRequest) {
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
   try {
     const { imageBase64, mediaType, context } = await req.json()
     if (!imageBase64) return NextResponse.json({ error: 'Image required' }, { status: 400 })
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      config: {
-        maxOutputTokens: 1000,
-        systemInstruction: `You are an expert health and safety inspector. Analyse workplace photos for hazards.
+    const response = await client.messages.create({
+      model: 'claude-opus-4-6',
+      max_tokens: 1000,
+      system: `You are an expert health and safety inspector. Analyse workplace photos for hazards.
 Return ONLY valid JSON with no preamble or markdown:
 {
   "hazards": [
@@ -29,25 +27,27 @@ Return ONLY valid JSON with no preamble or markdown:
   "summary": "string - brief 1 sentence summary",
   "compliantAreas": ["string"] 
 }
-If no hazards are found return an empty hazards array and overallRisk of "none".`
-      },
-      contents: [{
+If no hazards are found return an empty hazards array and overallRisk of "none".`,
+      messages: [{
         role: 'user',
-        parts: [
+        content: [
           {
-            inlineData: {
-              mimeType: mediaType || 'image/jpeg',
+            type: 'image',
+            source: {
+              type: 'base64',
+              media_type: mediaType || 'image/jpeg',
               data: imageBase64,
             }
           },
           {
+            type: 'text',
             text: `Analyse this workplace photo for health and safety hazards. Context: ${context || 'General workplace inspection'}. Return ONLY the JSON object.`
           }
         ]
       }]
     })
 
-    const text = (response.text || '')
+    const text = response.content[0].type === 'text' ? response.content[0].text : ''
     const cleaned = text.replace(/```json\n?|\n?```/g, '').trim()
     const analysis = JSON.parse(cleaned)
 

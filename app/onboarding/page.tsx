@@ -40,14 +40,11 @@ export default function OnboardingPage() {
     if (!user) return
     setLoading(true)
     try {
-      const { writeBatch } = await import('firebase/firestore')
-      const batch = writeBatch(db)
-
       const companyId = collection(db, 'companies').id || `company_${Date.now()}`
       const companyRef = doc(collection(db, 'companies'))
       const finalCompanyId = companyRef.id
 
-      batch.set(companyRef, {
+      await setDoc(companyRef, {
         name: form.companyName,
         industry: form.industry,
         size: form.size,
@@ -60,7 +57,7 @@ export default function OnboardingPage() {
       })
 
       // Add default location
-      batch.set(doc(collection(db, `companies/${finalCompanyId}/locations`)), {
+      await setDoc(doc(collection(db, `companies/${finalCompanyId}/locations`)), {
         name: 'Main Site',
         address: '',
         city: form.city,
@@ -70,7 +67,7 @@ export default function OnboardingPage() {
       })
 
       // Add user as member
-      batch.set(doc(db, `companies/${finalCompanyId}/members`, user.uid), {
+      await setDoc(doc(db, `companies/${finalCompanyId}/members`, user.uid), {
         userId: user.uid,
         name: user.name,
         email: user.email,
@@ -80,26 +77,22 @@ export default function OnboardingPage() {
       })
 
       // Update user doc
-      batch.update(doc(db, 'users', user.uid), {
+      await updateDoc(doc(db, 'users', user.uid), {
         companyId: finalCompanyId,
         role: 'admin',
       })
 
       // Initialise usage
-      batch.set(doc(db, 'usage', finalCompanyId), {
+      await setDoc(doc(db, 'usage', finalCompanyId), {
         auditsThisMonth: 0,
         locationsCount: 1,
         membersCount: 1,
         resetDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1),
       })
 
-      // Commit the batch
-      await batch.commit()
-
-      // Log out of the batch
       await logCritical(finalCompanyId, {
         userId: user.uid,
-        name: user.name || 'User',
+        name: user.name,
         role: 'admin',
         email: user.email,
       }, {
@@ -109,6 +102,19 @@ export default function OnboardingPage() {
       })
 
       await refreshUser()
+
+      // Send welcome email
+      await fetch('/api/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'welcome',
+          toEmail: user.email,
+          toName: user.name,
+          companyName: form.companyName,
+        }),
+      })
+
       toast.success(`Welcome to OpsAudit, ${form.companyName}!`)
       router.push('/dashboard')
     } catch (err) {

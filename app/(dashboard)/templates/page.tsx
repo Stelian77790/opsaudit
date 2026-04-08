@@ -67,7 +67,7 @@ export default function TemplatesPage() {
           </div>
           <div>
             <p className="text-sm font-medium text-white">Generate a template with AI</p>
-            <p className="text-xs text-neutral-500">Describe your audit in plain English and Gemini will build it in seconds</p>
+            <p className="text-xs text-neutral-500">Describe your audit in plain English and Claude will build it in seconds</p>
           </div>
         </div>
         <Link href="/templates/new?mode=ai" className="btn-primary text-sm flex items-center gap-1.5">
